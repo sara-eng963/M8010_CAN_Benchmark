@@ -25,6 +25,10 @@ add_executable(m8010_burst_sweep src/benchmark/burst_sweep.cpp)
 target_link_libraries(m8010_burst_sweep PRIVATE m8010_can_model)
 target_compile_options(m8010_burst_sweep PRIVATE -Wall -Wextra -Wpedantic)
 
+add_executable(m8010_admittance_phase_sweep src/benchmark/admittance_phase_sweep.cpp)
+target_link_libraries(m8010_admittance_phase_sweep PRIVATE m8010_can_model)
+target_compile_options(m8010_admittance_phase_sweep PRIVATE -Wall -Wextra -Wpedantic)
+
 enable_testing()
 add_executable(test_can_timing tests/test_can_timing.cpp)
 target_link_libraries(test_can_timing PRIVATE m8010_can_model)
