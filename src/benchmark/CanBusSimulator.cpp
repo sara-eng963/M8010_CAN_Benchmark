@@ -209,14 +209,15 @@ void BenchmarkSimulator::GenerateInitialEvents()
     const auto period_ns = static_cast<std::uint64_t>(std::llround(1e9 / _s.control_hz));
 
     for (int c = 0; c < _s.cycles; ++c) {
-        const auto t = static_cast<std::uint64_t>(c) * period_ns;
+        const auto cycle_start_ns = static_cast<std::uint64_t>(c) * period_ns;
+        const auto release_ns = cycle_start_ns + _s.command_release_delay_ns;
         for (int node = 1; node <= _s.nodes; ++node) {
             PendingFrame pf;
             pf.frame = make_rpdo(_s.mode, node, c, trajectory_value(node, c, _s.control_hz));
             pf.kind = FrameKind::Rpdo;
             pf.bus = BusForNode(node);
-            pf.ready_ns = t;
-            pf.first_ready_ns = t;
+            pf.ready_ns = release_ns;
+            pf.first_ready_ns = release_ns;
             Enqueue(std::move(pf));
         }
     }
