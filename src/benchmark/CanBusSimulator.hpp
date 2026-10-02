@@ -21,6 +21,7 @@ struct Scenario {
     double control_hz = 500.0;
     std::uint64_t bitrate = 1'000'000;
     int cycles = 5000;
+    std::uint64_t command_release_delay_ns = 0;
     std::uint64_t motor_response_delay_ns = 0;
     int heartbeat_period_ms = 0;
     int sdo_period_ms = 0;
