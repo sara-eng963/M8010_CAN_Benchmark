@@ -17,6 +17,8 @@ BenchmarkSimulator::BenchmarkSimulator(Scenario scenario)
     if (_s.cycles < 1) throw std::invalid_argument("cycles must be positive");
     if (_s.frame_error_probability < 0.0 || _s.frame_error_probability >= 1.0)
         throw std::invalid_argument("frame_error_probability must be in [0,1)");
+    if (_s.burst_error_attempts < 0)
+        throw std::invalid_argument("burst_error_attempts must be >= 0");
 
     const auto period_ns = static_cast<std::uint64_t>(std::llround(1e9 / _s.control_hz));
     _horizon_ns = period_ns * static_cast<std::uint64_t>(_s.cycles);
@@ -81,7 +83,22 @@ void BenchmarkSimulator::TryStartBus(int bus_index)
     bus.busy = true;
 
     const auto frame_bits = WireBits(pf.frame);
-    const bool fail = _uniform(_rng) < _s.frame_error_probability;
+
+    // Optional deterministic EMI-style burst: when the simulation reaches its midpoint,
+    // force the next N transmission attempts to fail consecutively. This complements
+    // the independent random-error model and is useful for short welding-noise bursts.
+    if (!_burst_started && _s.burst_error_attempts > 0 && _now_ns >= (_horizon_ns / 2)) {
+        _burst_started = true;
+        _burst_remaining = _s.burst_error_attempts;
+    }
+    bool burst_fail = false;
+    if (_burst_remaining > 0) {
+        burst_fail = true;
+        --_burst_remaining;
+    }
+
+    const bool random_fail = _uniform(_rng) < _s.frame_error_probability;
+    const bool fail = burst_fail || random_fail;
     const std::size_t consumed_bits = frame_bits + (fail ? 17u : 0u);
     const auto duration_ns = BitsToNs(consumed_bits);
     bus.attempted_bits += consumed_bits;
@@ -326,10 +343,16 @@ Result BenchmarkSimulator::BuildResult() const
     r.p99_feedback_latency_us = Percentile(feedback_lat, 0.99);
 
     const double period_us = 1e6 / _s.control_hz;
-    if (r.command_deadline_misses > 0 || r.offered_wire_load_pct >= 95.0) r.screening = "FAIL";
-    else if (r.offered_wire_load_pct > 80.0 || r.max_command_latency_us > 0.90 * period_us) r.screening = "MARGINAL";
-    else if (r.offered_wire_load_pct > 70.0 || r.max_command_latency_us > 0.75 * period_us) r.screening = "CAUTION";
-    else r.screening = "PASS";
+    if (r.command_deadline_misses > 0 || r.feedback_deadline_misses > 0 || r.offered_wire_load_pct >= 95.0)
+        r.screening = "FAIL";
+    else if (r.offered_wire_load_pct > 80.0 || r.max_command_latency_us > 0.90 * period_us
+             || r.max_feedback_latency_us > 0.95 * period_us)
+        r.screening = "MARGINAL";
+    else if (r.offered_wire_load_pct > 70.0 || r.max_command_latency_us > 0.75 * period_us
+             || r.max_feedback_latency_us > 0.85 * period_us)
+        r.screening = "CAUTION";
+    else
+        r.screening = "PASS";
     return r;
 }
 
