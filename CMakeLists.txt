@@ -33,3 +33,7 @@ enable_testing()
 add_executable(test_can_timing tests/test_can_timing.cpp)
 target_link_libraries(test_can_timing PRIVATE m8010_can_model)
 add_test(NAME can_timing COMMAND test_can_timing)
+
+add_executable(test_command_release_delay tests/test_command_release_delay.cpp)
+target_link_libraries(test_command_release_delay PRIVATE m8010_can_model)
+add_test(NAME command_release_delay COMMAND test_command_release_delay)
