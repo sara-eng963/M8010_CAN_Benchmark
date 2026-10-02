@@ -1,0 +1,19 @@
+name: C++ benchmark CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+      - name: Build
+        run: cmake --build build -j2
+      - name: Unit tests
+        run: ctest --test-dir build --output-on-failure
+      - name: Quick benchmark
+        run: ./build/m8010_can_benchmark --quick --csv results/ci_quick.csv
