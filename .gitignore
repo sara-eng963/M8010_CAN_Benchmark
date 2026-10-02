@@ -5,4 +5,3 @@ build/
 *.zip
 *.log
 .vscode/
-results/*.csv
