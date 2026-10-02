@@ -9,11 +9,14 @@ ctest --test-dir build --output-on-failure >/dev/null
 
 mkdir -p results/delay_sweep
 
-delays=(0 100 250 500 750)
+# Extended sweep for the 2 ms / 500 Hz design point.  The upper end is
+# intentionally pessimistic so we can identify where feedback freshness fails.
+delays=(0 100 250 500 750 1000 1250 1500 1750 2000)
 
 printf "\nM8010 Test 2 — 500 Hz response-delay sensitivity\n"
-printf "%-10s %-20s %-10s %-14s %-14s %-10s\n" "delay(us)" "profile" "load%" "maxCmd(us)" "maxFeedback(us)" "misses"
-printf '%*s\n' 84 '' | tr ' ' '-'
+printf "%-10s %-20s %-8s %-12s %-14s %-14s %-10s %-10s\n" \
+       "delay(us)" "profile" "load%" "maxCmd(us)" "maxFeedback" "p99Feedback" "cmdMiss" "fbMiss"
+printf '%*s\n' 112 '' | tr ' ' '-'
 
 for d in "${delays[@]}"; do
     csv="results/delay_sweep/delay_${d}us.csv"
@@ -21,10 +24,12 @@ for d in "${delays[@]}"; do
 
     awk -F, -v delay="$d" '
         NR > 1 && $2 == "interp_rpdo4_sync" && $4 == 1 && $6 == 500 {
-            printf "%-10s %-20s %-10.1f %-14.1f %-14.1f %-10d\n", delay, $3, $15, $18, $22, ($24 + $25)
+            printf "%-10s %-20s %-8.1f %-12.1f %-14.1f %-14.1f %-10d %-10d\n", \
+                   delay, $3, $15, $18, $22, $23, $24, $25
         }
     ' "$csv"
 done
 
 printf "\nCSV files written under results/delay_sweep/\n"
 printf "Focus: one bus, six M8010 nodes, 1 Mbit/s, RPDO4 + SYNC, 500 Hz.\n"
+printf "Important: command and feedback deadline misses are shown separately.\n"
