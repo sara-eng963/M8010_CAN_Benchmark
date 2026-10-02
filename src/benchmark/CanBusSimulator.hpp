@@ -26,6 +26,7 @@ struct Scenario {
     int sdo_period_ms = 0;
     bool inject_one_emcy = false;
     double frame_error_probability = 0.0;
+    int burst_error_attempts = 0;
     std::uint32_t random_seed = 0x4D8010u;
 };
 
@@ -112,6 +113,8 @@ private:
     std::uniform_real_distribution<double> _uniform{0.0, 1.0};
     std::uint64_t _retries = 0;
     std::uint64_t _horizon_ns = 0;
+    bool _burst_started = false;
+    int _burst_remaining = 0;
 
     void Schedule(std::uint64_t time_ns, int priority, std::function<void()> callback);
     void Enqueue(PendingFrame frame);
