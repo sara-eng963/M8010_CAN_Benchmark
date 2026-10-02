@@ -1,0 +1,7 @@
+build/
+*.o
+*.so
+*.a
+*.zip
+*.log
+.vscode/
