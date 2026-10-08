@@ -5,3 +5,5 @@ build/
 *.zip
 *.log
 .vscode/
+results/
+test-results/
